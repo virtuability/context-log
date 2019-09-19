@@ -1,0 +1,2 @@
+context-log: A simple library to emit contextual information in structured logs (JSON).
+Copyright 2019 Virtuability. All Rights Reserved.
