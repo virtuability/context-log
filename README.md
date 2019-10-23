@@ -12,15 +12,23 @@ Because the library uses the Python thread local context it works across package
 
 The approach is loosely based on the [Log4j 2 API Thread Context](https://logging.apache.org/log4j/2.x/manual/thread-context.html).
 
-
 ## Usage
 
 Structured logging can be achieved with the [python-json-logger library](https://pypi.org/project/python-json-logger/).
 
-Simply add a project dependency and the code below to the main code module.
+Simply add project dependencies to requirements.txt:
+
+```python
+python_json_logger
+PyYAML
+context-log
+```
+
+Add the code below to the main code module.
 
 Add the following YAML configuration in the `resources/logging.yaml` file, which outputs JSON structured logs to `stdout`.
-```
+
+```yaml
 version: 1
 formatters:
   json:
@@ -38,12 +46,13 @@ root:
 ```
 
 Use the context_log library to emit logs. Example below.
-```
+
+```python
 import logging.config
 import yaml
 
 with open('resources/logging.yaml', 'r') as log_config_file:
-  logging.config.dictConfig(yaml.load(log_config_file))
+  logging.config.dictConfig(yaml.safe_load(log_config_file))
 
 from context_log import ContextLog
 
@@ -68,7 +77,8 @@ def handler(event, context):
 ```
 
 First log info event:
-```
+
+```json
 {
     "asctime": "2019-09-19 11:53:20,479",
     "name": "handler",
@@ -80,7 +90,8 @@ First log info event:
 ```
 
 Second log info event:
-```
+
+```json
 {
   "asctime": "2019-09-19 11:53:20,580",
   "name": "handler",
@@ -96,6 +107,7 @@ Second log info event:
       "duration": 100.428}
 }
 ```
+
 ## The Detail
 
 The standard logger is wrapped by a `LoggerAdapter`. It is therefore imperative that the `ContextLog.get_logger(name='<name>', clear=True|False)` call is made to get the logger to emit contextual logs.
@@ -124,6 +136,75 @@ There are also a number of helpers in an attempt to standardise log output `cont
 * `put_request_viewer_country(viewer_country)`
 * `put_trigger_source(trigger_source)`
 
-# Contributing
+## Contributing
 
 Pull requests are more than welcome.
+
+## Running pytest
+
+Create virtualenv, download dependencies and run tests:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r tests/requirements.txt
+pip3 install -e .
+pytest
+
+# Clean up local development installation
+rm -rf context_log.egg-info
+```
+
+## Running tox
+
+```bash
+pip3 install --user --upgrade tox
+tox
+```
+
+## Releasing library to PyPI
+
+Short version from the [Packaging Python Projects](https://packaging.python.org/tutorials/packaging-projects/) site.
+
+Install the release tools:
+
+```bash
+python3 -m pip install --user --upgrade setuptools wheel twine
+```
+
+Remove old distribution(s):
+
+```bash
+rm -rf dist/
+```
+
+Build the context-log package:
+
+```bash
+python3 setup.py sdist bdist_wheel
+```
+
+Upload context-log first to Test PyPI:
+
+```bash
+python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+```
+
+Test that uploaded package is functional:
+
+```bash
+python3 -m venv .vdist
+source .vdist/bin/activate
+python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps context-log
+
+# Do test
+python3
+from context_log import ContextLog
+exit()
+```
+
+Upload context-log to Live PyPI:
+
+```bash
+python3 -m twine upload dist/*
+```

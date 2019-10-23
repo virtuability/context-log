@@ -1,2 +1,3 @@
 python_json_logger
 PyYAML
+pytest
